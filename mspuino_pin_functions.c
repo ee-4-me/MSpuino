@@ -7,8 +7,8 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "msp432_hal_pin_functions.h"
-#include "msp432_hal_pins.h"
+#include "mspuino_pin_functions.h"
+#include "mspuino_pins.h"
 
 static void calculateTimerVals (int clockFreq, double freq, float duty, int *ID, int *EX0, int *CCR0, int *CCRN);
 static bool pinTypeCheck(enum MSP432_PIN_TYPE pin_type, enum MSP432_PIN_TYPE allowed_types[], uint8_t num_allowed_types);

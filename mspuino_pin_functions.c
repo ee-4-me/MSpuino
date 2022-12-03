@@ -14,6 +14,9 @@ static void calculateTimerVals (int clockFreq, double freq, float duty, int *ID,
 static bool pinTypeCheck(enum MSP432_PIN_TYPE pin_type, enum MSP432_PIN_TYPE allowed_types[], uint8_t num_allowed_types);
 
 // two port types on msp, even and odd, have to duplicate everything for even and odd case
+
+// set the type of pin.
+// types include digital input, analog output etc.
 void pinMode (struct MSP432_PIN *pin, enum MSP432_PIN_TYPE pin_type) {
   pin->pin_type = pin_type; // set pin type for checking later
 
@@ -146,6 +149,9 @@ void pinMode (struct MSP432_PIN *pin, enum MSP432_PIN_TYPE pin_type) {
   }
 }
 
+// read the "voltage" as a digital signal on a pin
+// returns 1 if the voltage is ~ 3.3[V]. Returns 0 if the voltage is ~ 0[V]
+// undefined behavior when voltage is between 0[V] and 3.3[V]
 bool digitalRead (struct MSP432_PIN *pin) {
   // no type check happening here as any pin can be read
 
@@ -156,6 +162,9 @@ bool digitalRead (struct MSP432_PIN *pin) {
   }
 }
 
+// set the output voltage on the pin
+// when val = 1, output voltage = 3.3[V]
+// when val = 0, output voltage = 0[V]
 void digitalWrite (struct MSP432_PIN *pin, bool val) {
   enum MSP432_PIN_TYPE allowed_types[] = {DIGITAL_OUTPUT};
   if (pinTypeCheck(pin->pin_type, allowed_types, 1)) return; // exit
@@ -175,6 +184,8 @@ void digitalWrite (struct MSP432_PIN *pin, bool val) {
   }
 }
 
+// create a pwm signal from a timer pin
+// need to define the frequency in [Hz], and duty as a float between 0.0 a 1.0
 void analogWrite (struct MSP432_PIN *pin, double freq, float duty) {
   enum MSP432_PIN_TYPE allowed_types[] = {ANALOG_OUTPUT};
   if (pinTypeCheck(pin->pin_type, allowed_types, 1)) return; // exit
@@ -193,9 +204,12 @@ void analogWrite (struct MSP432_PIN *pin, double freq, float duty) {
   pin->A_timer->EX0 = EX0; // clock divider multiple
   pin->A_timer->CCR[0] = CCR0; // count up to value to get frequency
   pin->A_timer->CCR[pin->timer_number] = CCRN; // divide count up value by this value to get duty cycle
-  pin->A_timer->CCTL[pin->timer_number] |= (0b111 << 5); // reset set mode
+  pin->A_timer->CCTL[pin->timer_number] |= (0b111 << 5); // "reset-set" mode
 }
 
+// toggle the output of an analog output timer pin by disconnecting/connecting the pin from the timer
+// if val = 0, disconnect pin
+// if val = 1, connect pin
 void analogWriteToggle (struct MSP432_PIN *pin, bool val) {
   enum MSP432_PIN_TYPE allowed_types[] = {ANALOG_OUTPUT};
   if (pinTypeCheck(pin->pin_type, allowed_types, 1)) return; // exit
@@ -227,8 +241,15 @@ void analogWriteToggle (struct MSP432_PIN *pin, bool val) {
 
 // if analog read was called in an interrupt while in this analog read, bad things would happen
 // need to have some sort of interrupt protection 
+
+// read the analog voltage of the pin
+// this function will linearly turn the analog voltage to a digital number
+// 0[V] is mapped to a uint of 0
+// 3.3[V] is mapped to a uint of 2^14 - 1, 16383.
+// Voltage can be determined by taking analogRead() * 3.3 / 16383
 uint32_t analogRead (struct MSP432_PIN *pin) {
-  printf("f\n");
+  enum MSP432_PIN_TYPE allowed_types[] = {ANALOG_INPUT};
+  if (pinTypeCheck(pin->pin_type, allowed_types, 1)) return; // exit
 
   ADC14->CTL0 = (1 << 26) | // source sample and hold
                 (0b00 << 17) | // single channel single conversion

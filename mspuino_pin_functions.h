@@ -14,7 +14,8 @@
 void pinMode (struct MSP432_PIN *pin, enum MSP432_PIN_TYPE pin_type);
 
 uint32_t analogRead (struct MSP432_PIN *pin);
-void analogWrite (struct MSP432_PIN *pin, double freq, float duty);
+void analogWrite (struct MSP432_PIN *pin, uint8_t pwm);
+void analogWrite_f_d (struct MSP432_PIN *pin, double freq, double duty);
 void analogWriteToggle (struct MSP432_PIN *pin, bool val);
 
 bool digitalRead (struct MSP432_PIN *pin);
